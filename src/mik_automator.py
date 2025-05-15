@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 import ctypes
 
-from pywinauto.application import Application, WindowSpecification
+from pywinauto.application import Application
 from pywinauto.controls.uia_controls import ButtonWrapper, TreeItemWrapper
 from pywinauto.controls.common_controls import TreeViewWrapper
 from pywinauto.base_wrapper import BaseWrapper
@@ -14,7 +14,7 @@ from pywinauto.base_wrapper import BaseWrapper
 root_dir = os.getenv("LOCALAPPDATA")
 assert root_dir, "local appdata"
 exe_files = glob.glob(
-    f"Programs/Mixed In Key/Mixed In Key*/MixedInKey.exe",
+    "Programs/Mixed In Key/Mixed In Key*/MixedInKey.exe",
     root_dir=root_dir,
     recursive=True,
 )
@@ -23,8 +23,8 @@ assert len(exe_files) == 1, "more than 1 mik .exe found"
 exe_file = os.path.join(root_dir, exe_files[0])
 
 
-def split_folder(folder: str):
-    return [i for i in folder.split(os.sep) if i]
+def split_dir(dir: str):
+    return [i for i in dir.split(os.sep) if i]
 
 
 def get_screen_resolution() -> tuple[int, int]:
@@ -52,7 +52,7 @@ def get_mik_window(create_new_if_not_open: bool):
         try:
             try:
                 app.connect(title_re="Mixed In Key.*")
-            except:
+            except:  # pylint: disable=bare-except
                 if create_new_if_not_open:
                     app.start(exe_file)
 
@@ -60,7 +60,7 @@ def get_mik_window(create_new_if_not_open: bool):
             window.wait("ready", timeout=20)
             window.wait("visible", timeout=20)
             return window, app
-        except:
+        except:  # pylint: disable=bare-except
             if i == 2:
                 logging.error("Could not open MIK")
                 raise
@@ -68,11 +68,11 @@ def get_mik_window(create_new_if_not_open: bool):
     raise Exception("Could not open MIK")
 
 
-def run(folder: str):
-    USER_FOLDER = os.path.expanduser("~")
-    if not folder.startswith(USER_FOLDER):
+def run(dir: str):
+    USER_DIR = os.path.expanduser("~")
+    if not dir.startswith(USER_DIR):
         raise NotImplementedError(
-            f"incorrect folder format, must start with user folder ({USER_FOLDER})"
+            f"incorrect dir format, must start with user dir ({USER_DIR})"
         )
 
     window, app = get_mik_window(create_new_if_not_open=True)
@@ -113,20 +113,20 @@ def run(folder: str):
         node.select()
         time.sleep(2)
 
-    is_in_user_folder = False
-    for user_folder in ["Music", "Downloads", "Documents"]:
-        user_folder_long = f"{USER_FOLDER}\\{user_folder}"
-        if user_folder_long in folder:
-            is_in_user_folder = True
+    is_in_user_dir = False
+    for user_dir in ["Music", "Downloads", "Documents"]:
+        user_dir_long = f"{USER_DIR}\\{user_dir}"
+        if user_dir_long in dir:
+            is_in_user_dir = True
             expand_nodes(
-                originally_visible_nodes=["Desktop", user_folder],
-                remaining_nodes=split_folder(folder.split(user_folder_long, 1)[1]),
+                originally_visible_nodes=["Desktop", user_dir],
+                remaining_nodes=split_dir(dir.split(user_dir_long, 1)[1]),
             )
             break
-    if not is_in_user_folder:
+    if not is_in_user_dir:
         expand_nodes(
             originally_visible_nodes=["Desktop", "This PC"],
-            remaining_nodes=split_folder(os.path.abspath(folder)),
+            remaining_nodes=split_dir(os.path.abspath(dir)),
         )
 
     # OK after selected folder
@@ -160,6 +160,6 @@ def run(folder: str):
 
 
 if __name__ == "__main__":
-    folder = os.path.join(Path.home(), "Music\\DJ Tracks")
-    print("adding folder: ", folder)
-    run(folder)
+    dir = os.path.join(Path.home(), "Music\\DJ Tracks")
+    print("adding dir: ", dir)
+    run(dir)
